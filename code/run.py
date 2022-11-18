@@ -12,9 +12,9 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
-from code.entry_antispoof import losses, models
+from entry_antispoof import losses, models
 from dataset.dataset_dir import DatasetDir
-from code.entry_antispoof.utils import AverageMeter
+from entry_antispoof.utils import AverageMeter
 
 cv2.setNumThreads(0)
 
