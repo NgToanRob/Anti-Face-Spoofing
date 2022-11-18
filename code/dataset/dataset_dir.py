@@ -86,7 +86,18 @@ class DatasetDir(Dataset):
             state="train",
             tensor_norm=False,
             is_add=False,
-    ):
+        ):
+        """
+        *|MARKER_CURSOR|*
+        
+        @param data_dir the directory where the images are stored
+        @param pkl_path the path to the pickle file containing the data
+        @param idx the index of the data to be loaded.
+        @param transform the transformation to apply to the image.
+        @param state train or test
+        @param tensor_norm whether to normalize the tensor
+        @param is_add whether to add the attribute to the image
+        """
         self.state = state
         self.transform = transform
         self.data_dir = data_dir
@@ -112,6 +123,14 @@ class DatasetDir(Dataset):
             self.transform = transform_test
 
     def __getitem__(self, image_index):
+        """
+        It takes an image index, maps it to the corresponding index in the dataset,
+        loads the image, transforms it, and returns the image, the attributes, and
+        the path
+        
+        @param image_index the index of the image in the dataset
+        @return image, attributes, path
+        """
         """
         :return: Tuple (
             image: torch.Tensor[3, size, size],
@@ -166,7 +185,20 @@ class DatasetImage(Dataset):
             is_test=False,
             is_multi=False,
             tensor_norm=False,
-    ):
+            ):
+        """
+        The function takes in a data directory, a transform function, a boolean for
+        whether or not the data is a test set, a boolean for whether or not the data
+        is multi-label, and a boolean for whether or not the data should be
+        normalized
+        
+        @param data_dir the directory where the images are stored
+        @param transform This is the transformation that will be applied to the
+        image.
+        @param is_test If true, then the dataset is the test dataset.
+        @param is_multi If True, the dataset will return a tuple of (image, label)
+        @param tensor_norm If True, the tensor will be normalized to [0, 1]
+        """
 
         self.data_dir = data_dir
         self.paths = glob.glob(f"{data_dir}/**/*.jpg")
@@ -181,6 +213,11 @@ class DatasetImage(Dataset):
         self.tensor_norm = tensor_norm
 
     def __getitem__(self, index):
+        """
+        It takes an image, transforms it, and returns the transformed image
+        
+        @param index the index of the image in the dataset
+        """
         path = self.paths[index]
         image = cv2.imread(path)
         key = path.split('/')[-1].split('.')[0]

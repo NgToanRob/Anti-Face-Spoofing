@@ -49,6 +49,16 @@ attr_dict = {
 
 
 def unroll_prob(target, epoch=None):
+    """
+    If the random number is greater than the epoch divided by 9, or if the random
+    number is less than 0.02, then we set the target to a random number between 0.05
+    and 0.8. Otherwise, we set the target to -1, 0, or 1
+    
+    @param target the target tensor
+    @param epoch the current epoch number
+    @return The target_out is a tensor of the same shape as target, but with values
+    of 0, 1, or -1.
+    """
     if np.random.rand() > epoch / 9 or np.random.rand() < 0.02:
         rand = 0.05 + 0.75 * torch.rand(target.shape).to(target.device)
         target_out = (target > rand).long()
@@ -61,6 +71,14 @@ def unroll_prob(target, epoch=None):
 
 
 def data_loaders(config, fold=0):
+    """
+    It loads the data from the data directory and returns a list of train loaders
+    and a test loader
+    
+    @param config This is the configuration object that we created earlier.
+    @param fold the fold number of the data.
+    @return train_loader, train_loader_real, test_loader
+    """
     print(f"Data dir (Train): {config.data_dir}")
     train_dataset = DatasetDir(f'{config.data_dir}/images', f'{config.data_dir}/{config.data_name}.pkl')
     test_dataset = DatasetDir(data_dir=TEST_DATA_DIR, pkl_path=TEST_PKL_PATH, state='test')
@@ -94,6 +112,12 @@ def data_loaders(config, fold=0):
 
 
 def main(args):
+    """
+    `main` is a function that takes in a dictionary of arguments, initializes a
+    wandb run, and then trains a model.
+    
+    @param args the arguments passed in from the command line
+    """
     with wandb.init(project=wandb_project, config=args):
         config = wandb.config
         d = datetime.datetime.now()
@@ -121,6 +145,14 @@ def main(args):
 
 
 def train(model, config):
+    """
+    > We train the model for a number of epochs, and at each epoch we train the
+    model on the training set, and then evaluate the model on the validation set
+    
+    @param model the model we're training
+    @param config the configuration object that contains all the parameters for the
+    model
+    """
     limit = 300000
     os.makedirs(config.snapshots, exist_ok=True)
 
@@ -180,7 +212,23 @@ def train_epoch(
         epoch,
         config,
         limit=-1
-):
+    ):
+    """
+    It takes in a model, a data loader, a loss function, an optimizer, and a
+    scheduler, and then runs the model on the data loader, calculates the loss, and
+    updates the model parameters
+    
+    @param data_loaders a list of two data loaders, one for each set of images
+    @param model the model to train
+    @param scaler the amp scaler
+    @param criterion the loss function
+    @param optimizer the optimizer used to train the model
+    @param scheduler the learning rate scheduler
+    @param epoch the current epoch number
+    @param config the configuration object that contains all the parameters for the
+    training
+    @param limit the number of images to train on. If -1, train on all images.
+    """
     model.train()
     clipping_value = 5  # arbitrary value of your choosing
     torch.nn.utils.clip_grad_norm(model.parameters(), clipping_value)
@@ -230,6 +278,17 @@ def train_epoch(
 
 
 def validation(data_loader, model, criterion, config, step):
+    """
+    It takes a data loader, a model, a loss function, and a config, and returns the
+    average accuracy of the model on the data loader
+    
+    @param data_loader the validation data loader
+    @param model the model we're training
+    @param criterion the loss function
+    @param config a dictionary of parameters that we'll use to train the model.
+    @param step the current step of the training process
+    @return The validation loss is being returned.
+    """
     model.eval()
     if dbg:
         for name, v in attr_dict.items():
@@ -284,6 +343,12 @@ def validation(data_loader, model, criterion, config, step):
 
 
 def get_learning_rate(optimizer):
+    """
+    It returns the learning rate of the optimizer
+    
+    @param optimizer the optimizer used to train the model
+    @return The learning rate of the optimizer.
+    """
     for param_group in optimizer.param_groups:
         return param_group["lr"]
 

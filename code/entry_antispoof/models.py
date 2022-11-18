@@ -17,9 +17,24 @@ class ModelEMA(nn.Module):
             self.module.to(device=device)
 
     def forward(self, input):
+        """
+        > The `forward` function takes in an input, and returns the output of the
+        `module` attribute
+        
+        @param input the input to the module
+        @return The output of the module.
+        """
         return self.module(input)
 
     def _update(self, model, update_fn):
+        """
+        It takes a model and an update function, and then updates the model's parameters
+        and buffers using the update function
+        
+        @param model the model to be averaged
+        @param update_fn a function that takes in the EMA model's parameter and the
+        current model's parameter and returns the updated EMA parameter.
+        """
         with torch.no_grad():
             for ema_v, model_v in zip(self.module.parameters(), model.parameters()):
                 if self.device is not None:
@@ -31,12 +46,33 @@ class ModelEMA(nn.Module):
                 ema_v.copy_(model_v)
 
     def update_parameters(self, model):
+        """
+        It updates the parameters of the model by multiplying the parameters by the
+        decay rate and adding the new parameters multiplied by the learning rate
+        
+        @param model the model to update
+        """
         self._update(model, update_fn=lambda e, m: self.decay * e + (1. - self.decay) * m)
 
     def state_dict(self):
+        """
+        `state_dict()` returns a dictionary containing a whole lot of information about
+        the state of the module
+        
+        @return The state_dict is a Python dictionary object that:
+            - maps each layer to its parameter tensor
+            - stores the current state of the model
+            - can be used to load the model for future use
+        """
         return self.module.state_dict()
 
     def load_state_dict(self, state_dict):
+        """
+        `load_state_dict` takes a dictionary of parameters and loads them into the model
+        
+        @param state_dict a Python dictionary object that maps each layer to its
+        parameter tensor.
+        """
         self.module.load_state_dict(state_dict)
 
 
@@ -64,6 +100,12 @@ class AttrModelOld(nn.Module):
         self.attrs = nn.ModuleList(attrs)
 
     def forward(self, x):
+        """
+        > We take the output of the model, and pass it through each of the classifiers
+        
+        @param x the input image
+        @return The output of the classifier for each attribute.
+        """
         feat = self.model(x)
 
         res = []
@@ -73,6 +115,8 @@ class AttrModelOld(nn.Module):
         return torch.stack(res)
 
 
+# We take the input image, pass it through the model, and then pass the output of
+# the model through the classifiers
 class AttrLinear(nn.Module):
     def __init__(
             self,
@@ -101,6 +145,13 @@ class AttrLinear(nn.Module):
         self.attrs = nn.ModuleList(attrs)
 
     def forward(self, x):
+        """
+        > We take the input image, pass it through the model, and then pass the output
+        of the model through the classifiers
+        
+        @param x the input image
+        @return A list of the classifications for each attribute.
+        """
         with torch.no_grad():
             feat = self.model(x)
 
@@ -111,6 +162,8 @@ class AttrLinear(nn.Module):
         return torch.stack(res)
 
 
+# > The class takes in an encoder, number of attributes, pretrained, drop rate,
+# and drop path rate
 class AttrModel(nn.Module):
     def __init__(
             self,
@@ -132,11 +185,20 @@ class AttrModel(nn.Module):
         self.attrs = nn.Linear(num_feat, num_attrs)
 
     def forward(self, x):
+        """
+        > The function takes in an image, passes it through the model, and returns the
+        output of the model
+        
+        @param x the input image
+        @return The output of the model is being returned.
+        """
         feat = self.model(x)
 
         return self.attrs(feat)
 
 
+# It takes in a tensor of shape (batch_size, num_channels, height, width) and
+# returns a tensor of shape (batch_size, 1, height, width)
 class SpatialAttention(nn.Module):
     def __init__(self, kernel=3):
         super(SpatialAttention, self).__init__()
@@ -147,6 +209,13 @@ class SpatialAttention(nn.Module):
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
+        """
+        It takes in a tensor of shape (batch_size, num_channels, height, width) and
+        returns a tensor of shape (batch_size, 1, height, width)
+        
+        @param x the input to the model, a batch of images
+        @return The output of the sigmoid function.
+        """
         avg_out = torch.mean(x, dim=1, keepdim=True)
         max_out, _ = torch.max(x, dim=1, keepdim=True)
         x = torch.cat([avg_out, max_out], dim=1)
@@ -163,7 +232,17 @@ class FeatModel(nn.Module):
             pretrained=False,
             drop_rate=0.0,
             drop_path_rate=0.0,
-    ):
+            ):
+        """
+        We create a model with the encoder specified in the first argument, and then
+        we add a few layers to the end of the model
+        
+        @param encoder the name of the encoder to use.
+        @param num_classes number of classes in the dataset
+        @param pretrained whether to use a pretrained model or not
+        @param drop_rate dropout rate
+        @param drop_path_rate float, default=0.0
+        """
         super().__init__()
         self.bn = nn.BatchNorm2d(3)
         self.model = timm.create_model(
@@ -203,6 +282,15 @@ class FeatModel(nn.Module):
         self.classifier = nn.Linear(num_feat_head, num_classes)
 
     def forward(self, x):
+        """
+        We take the output of the last convolutional layer of the ResNet, and then we
+        apply a convolutional layer to it, followed by a batch normalization layer, a
+        ReLU activation function, an average pooling layer, a dropout layer, and a fully
+        connected layer
+        
+        @param x the input to the model
+        @return The output of the last layer of the network and the attention map
+        """
         # x = self.bn(x)
         feats = self.model(x)
         attention1 = self.sa1(feats[1])

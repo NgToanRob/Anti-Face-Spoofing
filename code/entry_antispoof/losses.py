@@ -4,6 +4,9 @@ import torch.nn.functional as F
 from torch.nn.modules.loss import _WeightedLoss
 
 
+# It's a weighted loss function that takes in a probability distribution and a
+# target distribution, and returns the negative log likelihood of the target
+# distribution
 class DistributionLoss(_WeightedLoss):
     def __init__(self, weight=None, size_average=False, ignore_index=-100, reduce=False):
         super(DistributionLoss, self).__init__(weight, size_average)
@@ -11,6 +14,14 @@ class DistributionLoss(_WeightedLoss):
         self.reduce = reduce
 
     def forward(self, input, target):
+        """
+        > The function takes in the output of the model (input) and the target
+        (target) and returns the negative log likelihood loss
+        
+        @param input the output of the network
+        @param target the target labels
+        @return The negative log likelihood of the target.
+        """
         probs = nn.functional.log_softmax(input, dim=1)
         return -1.0 * (target * probs).mean()
 
@@ -22,6 +33,14 @@ class FocalAge(_WeightedLoss):
         self.reduce = reduce
 
     def forward(self, input, target):
+        """
+        It takes the log of the softmax of the input, then multiplies each element
+        of the input by the target, and returns the mean of the result
+        
+        @param input the output of the network
+        @param target the target labels
+        @return The loss function is being returned.
+        """
         probs = nn.functional.log_softmax(input, dim=1)
 
         return -(target * probs).mean()  # .sum()/len(target)
